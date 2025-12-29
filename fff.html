@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>KBN: Fastest Finger First</title>
+    <style>
+        :root {
+            --kbc-blue: #0b1354;
+            --kbc-gold: #d4af37;
+            --kbc-glow: #2b58cc;
+            --correct: #28a745;
+            --wrong: #dc3545;
+            --selected: #ffc107;
+        }
+        body {
+            background-color: #000;
+            color: white;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #1a2a6c 0%, #000 80%);
+        }
+
+        /* --- Cover Page Section --- */
+        #cover-page {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: radial-gradient(circle, #0b1354 0%, #000 100%);
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .welcome-text {
+            font-size: 3.5rem;
+            color: var(--kbc-gold);
+            text-shadow: 0 0 20px var(--kbc-glow);
+            margin-bottom: 10px;
+        }
+        .sub-text {
+            font-size: 1.5rem;
+            color: white;
+            opacity: 0.8;
+            margin-bottom: 40px;
+        }
+        .start-btn {
+            background: transparent;
+            color: var(--kbc-gold);
+            border: 2px solid var(--kbc-gold);
+            padding: 15px 50px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            border-radius: 50px;
+            transition: 0.3s;
+        }
+        .start-btn:hover {
+            background: var(--kbc-gold);
+            color: black;
+            box-shadow: 0 0 30px var(--kbc-gold);
+        }
+
+        /* --- Full Screen Flash Overlay --- */
+        #flash-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 2000;
+        }
+        @keyframes camera-strobe {
+            0% { opacity: 0; }
+            5%, 25%, 45% { opacity: 1; }
+            15%, 35%, 100% { opacity: 0; }
+        }
+        .flash-active { animation: camera-strobe 1.2s ease-out forwards; }
+
+        /* --- UI Elements --- */
+        #header { text-align: center; padding: 20px; color: var(--kbc-gold); font-size: 1.2rem; letter-spacing: 2px; }
+        #question-box { 
+            width: 80%; margin: 0 auto 30px auto;
+            background: linear-gradient(90deg, transparent, var(--kbc-blue), var(--kbc-blue), transparent); 
+            border-top: 2px solid var(--kbc-gold); border-bottom: 2px solid var(--kbc-gold); 
+            padding: 25px; text-align: center; font-size: 2rem; 
+        }
+
+        #reveal-container { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; }
+        .reveal-item {
+            width: 450px; padding: 15px; background: linear-gradient(90deg, #16222a, #3a6073);
+            border: 1px solid var(--kbc-gold); border-radius: 5px; text-align: center; font-size: 1.6rem;
+            font-weight: bold; opacity: 0; transform: translateY(20px); transition: all 0.5s ease;
+        }
+        .reveal-item.visible { opacity: 1; transform: translateY(0); }
+        .reveal-item span { color: var(--kbc-gold); margin-right: 15px; }
+
+        #options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 40px; width: 70%; margin: 0 auto 40px auto; opacity: 0.6; pointer-events: none; }
+        .option { background: rgba(11, 19, 84, 0.5); border: 1px solid var(--kbc-gold); padding: 10px 25px; font-size: 1.1rem; border-radius: 50px; }
+        .option span { color: var(--kbc-gold); margin-right: 10px; }
+
+        /* --- Scoreboard --- */
+        #fff-scoreboard {
+            position: fixed; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%);
+            width: 50%; max-width: 600px; background: rgba(11, 19, 84, 0.98);
+            border: 3px solid var(--kbc-gold); padding: 30px; border-radius: 20px;
+            display: none; flex-direction: column; align-items: center; z-index: 1000;
+        }
+        #scoreboard-rows { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+        .score-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; font-size: 1.4rem; border-radius: 10px; }
+        .score-row.is-correct { color: var(--correct); }
+        .score-row.is-wrong { color: var(--wrong); opacity: 0.8; }
+        .score-row.groom { border: 2px solid var(--kbc-gold); background: rgba(255, 255, 255, 0.1); font-weight: bold; }
+
+        .controls { position: fixed; bottom: 30px; right: 30px; }
+        .btn-reveal { background: var(--kbc-gold); color: #000; border: none; padding: 15px 30px; font-size: 1.2rem; font-weight: bold; cursor: pointer; border-radius: 5px; }
+        .btn-hotseat { background: var(--correct); color: white; border: none; padding: 15px 40px; font-size: 1.4rem; font-weight: bold; cursor: pointer; border-radius: 50px; margin-top: 30px; }
+    </style>
+</head>
+<body>
+
+<div id="cover-page">
+    <img src="nisupati_logo_nobg.jpeg" style="width: 250px; margin-bottom: 20px;" alt="Logo">
+    <div class="welcome-text">Welcome to<br>Kaun Banega Nisupati</div>
+    <div class="sub-text">Nisu's Final Quizzing Frontier</div>
+    <button class="start-btn" onclick="startFFF()">Let's find the fastest finger...</button>
+</div>
+
+<div id="flash-overlay"></div>
+
+<div id="header">FASTEST FINGER FIRST</div>
+<div id="question-box">Rank Nisu's first loves in chronological order of when he first fell in love with them:</div>
+
+<div id="reveal-container"></div>
+
+<div id="options-grid">
+    <div class="option"><span>A:</span> Tripathi Sir</div>
+    <div class="option"><span>B:</span> Aishwarya Kuthe</div>
+    <div class="option"><span>C:</span> Karthick Jaychandran</div>
+    <div class="option"><span>D:</span> Mamta Miss</div>
+</div>
+
+<div id="fff-scoreboard">
+    <h1 style="color:var(--kbc-gold); margin-top: 0; margin-bottom: 20px;">Finger King Identified</h1>
+    <div id="scoreboard-rows"></div>
+    <button class="btn-hotseat" onclick="window.location.href='kbc_main.html'">ENTER THE HOT SEAT</button>
+</div>
+
+<div class="controls" id="controls-container" style="display: none;">
+    <button class="btn-reveal" id="main-action-btn" onclick="handleNextAction()">REVEAL NEXT</button>
+</div>
+
+<audio id="snd-intro" src="fff_music.mp3"></audio> <audio id="snd-reveal-1" src=""></audio> <audio id="snd-reveal-2" src=""></audio> <audio id="snd-reveal-3" src=""></audio> <audio id="snd-reveal-4" src=""></audio> <audio id="snd-leaderboard-reveal" src="first_intro.mp3"></audio> <script>
+    const FFF_CONFIG = {
+        correctOrder: [
+            { label: "1", text: "Karthick Jaychandran" },
+            { label: "2", text: "Mamta Miss" },
+            { label: "3", text: "Tripathi Sir" },
+            { label: "4", text: "Aishwarya Kuthe" }
+        ],
+        results: [
+            { name: "Nisu", time: "0.01s", isCorrect: true,  isWinner: true },
+            { name: "Kapil",    time: "5.63",   isCorrect: true, isWinner: false },
+            { name: "Vidu",       time: "1.3s", isCorrect: true,  isWinner: false },
+            { name: "Niv",       time: "12.2s", isCorrect: true,  isWinner: false },
+            { name: "Ash",       time: "6.21s", isCorrect: true,  isWinner: false },
+            { name: "Sahil",       time: "2.10s", isCorrect: true,  isWinner: false },
+            { name: "Pravina",       time: "8.1s", isCorrect: true,  isWinner: false },
+            { name: "Karishma",       time: "0.50s", isCorrect: true,  isWinner: false },
+            { name: "Madhur",       time: "2.48s", isCorrect: true,  isWinner: false },
+            { name: "Manas",    time: "---",   isCorrect: false, isWinner: false }
+        ]
+    };
+
+    let currentRevealIndex = 0;
+
+    function startFFF() {
+        // 1. Play the intro sound immediately on user click
+        const introSound = document.getElementById('snd-intro');
+        if (introSound) {
+            introSound.play().catch(error => {
+                console.log("Audio playback failed:", error);
+            });
+        }
+
+        // 2. Hide cover page and show controls
+        document.getElementById('cover-page').style.display = 'none';
+        document.getElementById('controls-container').style.display = 'block';
+    }
+
+    function handleNextAction() {
+        const revealContainer = document.getElementById('reveal-container');
+        const btn = document.getElementById('main-action-btn');
+
+        if (currentRevealIndex < FFF_CONFIG.correctOrder.length) {
+            const item = FFF_CONFIG.correctOrder[currentRevealIndex];
+            const div = document.createElement('div');
+            div.className = 'reveal-item';
+            div.innerHTML = `<span>${item.label}:</span> ${item.text}`;
+            revealContainer.appendChild(div);
+            
+            setTimeout(() => {
+                div.classList.add('visible');
+                // Play specific reveal sound for each index
+                const snd = document.getElementById(`snd-reveal-${currentRevealIndex + 1}`);
+                if (snd.src) { snd.currentTime = 0; snd.play(); }
+            }, 10);
+
+            currentRevealIndex++;
+            if (currentRevealIndex === FFF_CONFIG.correctOrder.length) {
+                btn.innerText = "SHOW RESULTS";
+                btn.style.background = "#ffc107";
+            }
+        } else {
+            showScoreboardWithFlash();
+            btn.style.display = 'none';
+        }
+    }
+
+    function showScoreboardWithFlash() {
+        const overlay = document.getElementById('flash-overlay');
+        const board = document.getElementById('fff-scoreboard');
+        const revealContainer = document.getElementById('reveal-container');
+        const optionsGrid = document.getElementById('options-grid');
+        const rowsContainer = document.getElementById('scoreboard-rows');
+        
+        rowsContainer.innerHTML = '';
+        FFF_CONFIG.results.forEach(res => {
+            const div = document.createElement('div');
+            let cls = ['score-row', res.isCorrect ? 'is-correct' : 'is-wrong'];
+            if (res.isWinner) cls.push('groom');
+            div.className = cls.join(' ');
+            div.innerHTML = `<span>${res.name}</span> <span>${res.time}</span>`;
+            rowsContainer.appendChild(div);
+        });
+
+        revealContainer.innerHTML = '';
+        optionsGrid.style.display = 'none';
+
+        overlay.classList.add('flash-active');
+        
+        setTimeout(() => {
+            board.style.display = 'flex';
+            const snd = document.getElementById('snd-leaderboard-reveal');
+            if (snd.src) { snd.currentTime = 0; snd.play(); }
+        }, 300);
+    }
+</script>
+
+</body>
+</html>
+

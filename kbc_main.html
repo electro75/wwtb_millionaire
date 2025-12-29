@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>KBC: The Hot Seat (Bilingual)</title>
+    <style>
+        :root {
+            --kbc-blue: #0b1354; --kbc-gold: #d4af37; --kbc-glow: #2b58cc;
+            --correct: #28a745; --wrong: #dc3545; --selected: #ffc107;
+            --text-dull: #b0b0b0; 
+        }
+        body { background-color: #000; color: white; font-family: 'Arial', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        
+        #sidebar { width: 320px; background: linear-gradient(to bottom, #000, #060b2e); border-right: 2px solid var(--kbc-gold); display: flex; flex-direction: column; padding: 20px; }
+        #lifelines-container { display: flex; justify-content: space-around; gap: 10px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(212, 175, 55, 0.3); }
+        .lifeline { width: 60px; height: 45px; background: radial-gradient(circle, var(--kbc-blue), #000); border: 2px solid var(--kbc-gold); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; font-weight: bold; font-size: 0.8rem; color: var(--text-dull); transition: 0.3s; box-shadow: 0 0 10px var(--kbc-glow); }
+        .lifeline.used { opacity: 0.3; cursor: not-allowed; position: relative; }
+        .lifeline.used::after { content: "X"; position: absolute; color: var(--wrong); font-size: 2rem; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+        #levels-list { display: flex; flex-direction: column-reverse; flex-grow: 1; justify-content: center; }
+        .level { padding: 5px 15px; margin: 2px 0; font-family: 'Courier New', monospace; font-size: 1.1rem; color: var(--kbc-gold); opacity: 0.4; display: flex; justify-content: space-between; }
+        .level.active { background: linear-gradient(90deg, transparent, var(--kbc-glow), transparent); color: white; opacity: 1; font-weight: bold; border: 1px solid var(--kbc-gold); }
+        .level.safe { color: #fff; text-shadow: 0 0 5px var(--kbc-gold); }
+
+        #main { flex-grow: 1; display: flex; flex-direction: column; position: relative; background: radial-gradient(circle at center, #1a2a6c 0%, #000 80%); }
+        #logo-container { flex-grow: 1; display: flex; justify-content: center; align-items: center; }
+        .kbc-logo { width: 420px; height: 420px; border-radius: 50%; border: 4px solid var(--kbc-gold); box-shadow: 0 0 60px var(--kbc-glow); }
+
+        #q-and-a { padding-bottom: 40px; display: flex; flex-direction: column; align-items: center; }
+        #question-box { width: 85%; height: 110px; background: linear-gradient(90deg, transparent, var(--kbc-blue), var(--kbc-blue), transparent); border-top: 2px solid var(--kbc-gold); border-bottom: 2px solid var(--kbc-gold); padding: 20px; text-align: center; font-size: 1.6rem; margin-bottom: 25px; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s; }
+        #options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 40px; width: 80%; }
+        .option { background: rgba(11, 19, 84, 0.8); border: 1px solid var(--kbc-gold); height: 60px; padding: 0 30px; font-size: 1.2rem; cursor: pointer; border-radius: 50px; transition: all 0.2s; display: flex; align-items: center; }
+        .option.hidden { visibility: hidden; }
+        .option span.label { color: var(--kbc-gold); margin-right: 10px; font-weight: bold; }
+        .option .text { transition: opacity 0.5s; }
+
+        .selected { background-color: var(--selected) !important; color: #000; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        .blinking { animation: blink 0.3s linear infinite; background-color: var(--selected) !important; color: #000; }
+        .correct { background-color: var(--correct) !important; color: white; transform: scale(1.05); }
+        .wrong { background-color: var(--wrong) !important; color: white; }
+
+        .nav-controls { position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; }
+        button { background: #222; color: var(--kbc-gold); border: 1px solid var(--kbc-gold); padding: 8px 15px; cursor: pointer; }
+        button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        /* Loading Overlay & Rules Section */
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, #060b2e, #000); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        #progress-container { width: 400px; height: 12px; background: #111; border: 1px solid var(--kbc-gold); border-radius: 10px; margin-top: 10px; overflow: hidden; }
+        #progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, var(--kbc-glow), var(--kbc-gold)); transition: width 0.3s; }
+        
+        #rules-container { 
+            max-width: 600px; 
+            background: rgba(11, 19, 84, 0.6); 
+            border: 1px solid var(--kbc-gold); 
+            padding: 30px; 
+            margin-top: 20px; 
+            border-radius: 15px; 
+            text-align: left;
+            box-shadow: 0 0 30px rgba(43, 88, 204, 0.2);
+        }
+        #rules-container h3 { color: var(--kbc-gold); margin-top: 0; border-bottom: 1px solid var(--kbc-gold); padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        #rules-container ul { line-height: 1.8; color: #eee; font-size: 1.05rem; }
+        
+        #btn-ready { 
+            display: none; /* Only hidden until loading finishes */
+            margin-top: 30px; 
+            padding: 15px 60px; 
+            font-size: 1.5rem; 
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            background: linear-gradient(to bottom, var(--kbc-gold), #8a6d3b);
+            color: #000;
+            border: 2px solid #fff;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 20px var(--kbc-glow);
+            transition: 0.3s;
+        }
+        #btn-ready:hover { transform: scale(1.05); background: var(--kbc-gold); }
+        #loading-status { margin-bottom: 5px; font-style: italic; color: var(--text-dull); }
+    </style>
+</head>
+<body>
+
+<div id="loading-overlay">
+    <div id="rules-container">
+        <h3>📜 Game Rules</h3>
+        <ul>
+            <li>Answer 15 questions to reach the 1 Million mark.</li>
+            <li><strong>Lifelines:</strong> 50:50, Phone-a-Friend, and Audience Poll.</li>
+            <li><strong>Bilingual:</strong> Questions switch between English and Hindi every 10 seconds.</li>
+            <li><strong>The Lock:</strong> Once you click "Lock Final Answer," your choice is permanent.</li>
+            <li><strong>Safe Zones:</strong> Reach Question 5 (£1k) and Question 10 (£32k) to secure your winnings.</li>
+        </ul>
+    </div>
+
+    <div id="loading-section" style="text-align: center; margin-top: 20px;">
+        <div id="loading-status">Preparing the Hot Seat...</div>
+        <div id="progress-container"><div id="progress-bar"></div></div>
+    </div>
+
+    <button id="btn-ready" onclick="startGame()">I am Ready</button>
+</div>
+
+<audio id="snd-start" src="https://cdn.pixabay.com/audio/2022/03/10/audio_c976f1f31d.mp3"></audio>
+<audio id="snd-click" src="https://cdn.pixabay.com/audio/2022/03/15/audio_7314777d4c.mp3"></audio>
+<audio id="snd-lock" src="https://cdn.pixabay.com/audio/2024/02/07/audio_8b21c97a89.mp3"></audio>
+<audio id="snd-correct" src="https://cdn.pixabay.com/audio/2021/08/04/audio_06259466aa.mp3"></audio>
+<audio id="snd-wrong" src="https://cdn.pixabay.com/audio/2021/08/04/audio_bb6640848d.mp3"></audio>
+<audio id="snd-lifeline" src="https://cdn.pixabay.com/audio/2022/03/10/audio_511c973a21.mp3"></audio>
+
+<div id="sidebar">
+    <div id="lifelines-container">
+        <div class="lifeline" id="life-5050" onclick="use5050()">50:50</div>
+        <div class="lifeline" id="life-phone" onclick="useLifeline('life-phone')">📞</div>
+        <div class="lifeline" id="life-audience" onclick="useLifeline('life-audience')">👥</div>
+    </div>
+    <div id="levels-list"></div>
+</div>
+
+<div id="main">
+    <div class="nav-controls">
+        <button id="btn-prev" onclick="prevQuestion()">⬅ Prev</button>
+        <button id="btn-lock" onclick="lockAnswer()">Lock Final Answer</button>
+        <button id="btn-next" onclick="nextQuestion()">Next ➡</button>
+    </div>
+    <div id="logo-container"><img src="https://i.imgur.com/8Y0pY3N.png" class="kbc-logo"></div>
+    <div id="q-and-a">
+        <div id="question-box"></div>
+        <div id="options-grid">
+            <div class="option" id="opt-0" onclick="selectOption(0)"><span class="label">A:</span><span class="text"></span></div>
+            <div class="option" id="opt-1" onclick="selectOption(1)"><span class="label">B:</span><span class="text"></span></div>
+            <div class="option" id="opt-2" onclick="selectOption(2)"><span class="label">C:</span><span class="text"></span></div>
+            <div class="option" id="opt-3" onclick="selectOption(3)"><span class="label">D:</span><span class="text"></span></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const GAME_CONFIG = {
+        prizes: [{amount:"£100",isSafe:false},{amount:"£200",isSafe:false},{amount:"£300",isSafe:false},{amount:"£500",isSafe:false},{amount:"£1k",isSafe:true},{amount:"£2k",isSafe:false},{amount:"£4k",isSafe:false},{amount:"£8k",isSafe:false},{amount:"£16k",isSafe:false},{amount:"£32k",isSafe:true},{amount:"£64k",isSafe:false},{amount:"£125k",isSafe:false},{amount:"£250k",isSafe:false},{amount:"£500k",isSafe:false},{amount:"£1M",isSafe:true}],
+        questions: [
+            { q: "What is the groom's 'drunkest' food order?", a: ["Vegan Salad", "20 McNuggets", "A single grape", "Artisanal Sourdough"], correct: 1 },
+            { q: "Which university did he almost go to but didn't?", a: ["Oxford", "Imperial", "Cambridge", "Nagpur Metro"], correct: 1 },
+            { q: "Why is the wedding cake 5 tiers?", a: ["Structural Integrity", "To hide the escape ladder", "Tax write-off", "He's overcompensating"], correct: 2 },
+        ]
+    };
+
+    let currentLevel = 0;
+    let currentLanguage = 'en';
+    let gameState = GAME_CONFIG.questions.map(() => ({ selectedIdx: null, isLocked: false, hiddenIndices: [] }));
+    let globalLifelines = { 'life-5050': false, 'life-phone': false, 'life-audience': false };
+
+    async function translateText(text) {
+        try {
+            const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|hi`);
+            const data = await res.json();
+            return data.responseData.translatedText;
+        } catch (e) { return text; }
+    }
+
+    async function initTranslations() {
+        const bar = document.getElementById('progress-bar');
+        for (let i = 0; i < GAME_CONFIG.questions.length; i++) {
+            let qObj = GAME_CONFIG.questions[i];
+            qObj.hi_q = await translateText(qObj.q);
+            qObj.hi_a = [];
+            for (let ans of qObj.a) { qObj.hi_a.push(await translateText(ans)); }
+            bar.style.width = `${((i + 1) / GAME_CONFIG.questions.length) * 100}%`;
+        }
+        
+        // Hide loading bar and show Ready button
+        document.getElementById('loading-status').innerText = "Translation Complete!";
+        document.getElementById('progress-container').style.display = 'none';
+        document.getElementById('btn-ready').style.display = 'block';
+    }
+
+    function startGame() {
+        document.getElementById('loading-overlay').style.display = 'none';
+        initGame();
+    }
+
+    function initGame() {
+        const levelsList = document.getElementById('levels-list');
+        levelsList.innerHTML = '';
+        GAME_CONFIG.prizes.forEach((p, i) => {
+            const div = document.createElement('div');
+            div.className = `level ${p.isSafe ? 'safe' : ''}`;
+            div.id = `level-${i}`;
+            div.innerHTML = `<span>${i + 1}</span> <span>${p.amount}</span>`;
+            levelsList.appendChild(div);
+        });
+        loadQuestion();
+        document.getElementById('snd-start').play().catch(()=>{});
+        setInterval(() => {
+            if (!gameState[currentLevel].isLocked) {
+                currentLanguage = (currentLanguage === 'en' ? 'hi' : 'en');
+                updateBilingualText();
+            }
+        }, 10000);
+    }
+
+    // ... (rest of the game logic functions: loadQuestion, selectOption, lockAnswer, lifelines, etc. remain the same as previous)
+    function loadQuestion() {
+        updateBilingualText();
+        const state = gameState[currentLevel];
+        document.getElementById('btn-prev').disabled = (currentLevel === 0);
+        document.getElementById('btn-next').disabled = (currentLevel === GAME_CONFIG.questions.length - 1) || !state.isLocked;
+        document.getElementById('btn-lock').disabled = state.isLocked;
+
+        for(let i=0; i<4; i++) {
+            const opt = document.getElementById(`opt-${i}`);
+            let cls = ["option"];
+            if (state.hiddenIndices.includes(i)) cls.push("hidden");
+            if (state.selectedIdx === i) {
+                if (state.isLocked) cls.push(i === GAME_CONFIG.questions[currentLevel].correct ? 'correct' : 'wrong');
+                else cls.push('selected');
+            }
+            if (state.isLocked && state.selectedIdx !== GAME_CONFIG.questions[currentLevel].correct && i === GAME_CONFIG.questions[currentLevel].correct) cls.push('correct');
+            opt.className = cls.join(" ");
+        }
+        document.querySelectorAll('.level').forEach(l => l.classList.remove('active'));
+        document.getElementById(`level-${currentLevel}`).classList.add('active');
+        Object.keys(globalLifelines).forEach(id => {
+            if (globalLifelines[id]) document.getElementById(id).classList.add('used');
+        });
+    }
+
+    function updateBilingualText() {
+        const qData = GAME_CONFIG.questions[currentLevel];
+        const qBox = document.getElementById('question-box');
+        qBox.style.opacity = 0;
+        document.querySelectorAll('.option .text').forEach(t => t.style.opacity = 0);
+        setTimeout(() => {
+            const isHi = (currentLanguage === 'hi' && qData.hi_q);
+            qBox.innerText = isHi ? qData.hi_q : qData.q;
+            for(let i=0; i<4; i++) document.getElementById(`opt-${i}`).querySelector('.text').innerText = isHi ? qData.hi_a[i] : qData.a[i];
+            qBox.style.opacity = 1;
+            document.querySelectorAll('.option .text').forEach(t => t.style.opacity = 1);
+        }, 500);
+    }
+
+    function selectOption(idx) {
+        if(gameState[currentLevel].isLocked) return;
+        document.getElementById('snd-click').play();
+        gameState[currentLevel].selectedIdx = idx;
+        document.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+        document.getElementById(`opt-${idx}`).classList.add('selected');
+    }
+
+    function lockAnswer() {
+        const state = gameState[currentLevel];
+        if (state.selectedIdx === null || state.isLocked) return;
+        state.isLocked = true;
+        document.getElementById('btn-lock').disabled = true;
+        const el = document.getElementById(`opt-${state.selectedIdx}`);
+        el.classList.add('blinking');
+        document.getElementById('snd-lock').play();
+        setTimeout(() => {
+            el.classList.remove('blinking');
+            const correctIdx = GAME_CONFIG.questions[currentLevel].correct;
+            if(state.selectedIdx === correctIdx) {
+                el.classList.add('correct'); document.getElementById('snd-correct').play();
+            } else {
+                el.classList.add('wrong'); document.getElementById(`opt-${correctIdx}`).classList.add('correct'); document.getElementById('snd-wrong').play();
+            }
+            if (currentLevel < GAME_CONFIG.questions.length - 1) document.getElementById('btn-next').disabled = false;
+        }, 1200);
+    }
+
+    function use5050() {
+        if (globalLifelines['life-5050'] || gameState[currentLevel].isLocked) return;
+        document.getElementById('snd-lifeline').play();
+        const correctIdx = GAME_CONFIG.questions[currentLevel].correct;
+        let indices = [0, 1, 2, 3].filter(i => i !== correctIdx).sort(() => Math.random() - 0.5).slice(0, 2);
+        gameState[currentLevel].hiddenIndices = indices;
+        globalLifelines['life-5050'] = true;
+        indices.forEach(i => document.getElementById(`opt-${i}`).classList.add('hidden'));
+        document.getElementById('life-5050').classList.add('used');
+    }
+
+    function useLifeline(id) {
+        if (globalLifelines[id]) return;
+        document.getElementById('snd-lifeline').play();
+        globalLifelines[id] = true; document.getElementById(id).classList.add('used');
+    }
+
+    function nextQuestion() { if(gameState[currentLevel].isLocked && currentLevel < GAME_CONFIG.questions.length - 1) { currentLevel++; loadQuestion(); } }
+    function prevQuestion() { if(currentLevel > 0) { currentLevel--; loadQuestion(); } }
+
+    initTranslations();
+</script>
+</body>
+</html>
