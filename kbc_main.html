@@ -29,7 +29,7 @@
         #q-and-a { padding-bottom: 40px; display: flex; flex-direction: column; align-items: center; }
         #question-box { width: 85%; height: 110px; background: linear-gradient(90deg, transparent, var(--kbc-blue), var(--kbc-blue), transparent); border-top: 2px solid var(--kbc-gold); border-bottom: 2px solid var(--kbc-gold); padding: 20px; text-align: center; font-size: 1.6rem; margin-bottom: 25px; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s; }
         #options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 40px; width: 80%; }
-        .option { background: rgba(11, 19, 84, 0.8); border: 1px solid var(--kbc-gold); height: 60px; padding: 0 30px; font-size: 1.2rem; cursor: pointer; border-radius: 50px; transition: all 0.2s; display: flex; align-items: center; }
+        .option { background: rgba(11, 19, 84, 0.8); border: 1px solid var(--kbc-gold); height: 60px; padding: 0 30px; font-size: 1.2rem; cursor: pointer; border-radius: 50px; transition: all 0.2s; display: flex; align-items: center; overflow: scroll;}
         .option.hidden { visibility: hidden; }
         .option span.label { color: var(--kbc-gold); margin-right: 10px; font-weight: bold; }
         .option .text { transition: opacity 0.5s; }
