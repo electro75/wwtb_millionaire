@@ -93,6 +93,14 @@
         .modal-content img { max-width: 100%; max-height: 80vh; border: 3px solid var(--kbc-gold); border-radius: 10px; box-shadow: 0 0 30px var(--kbc-glow); }
         .close-btn { color: var(--kbc-gold); font-size: 40px; font-weight: bold; position: absolute; right: 30px; top: 20px; cursor: pointer; transition: 0.3s; }
         .close-btn:hover { color: white; transform: scale(1.2); }
+        
+        /* Nominate Friend Popup Styles */
+        .popup { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.99); }
+        .popup-content { position: relative; margin: auto; padding: 40px; width: 90%; max-width: 600px; top: 50%; transform: translateY(-50%); background: rgba(11, 19, 84, 0.95); border: 3px solid var(--kbc-gold); border-radius: 15px; box-shadow: 0 0 30px var(--kbc-glow); text-align: center; }
+        .popup-content h2 { color: var(--kbc-gold); font-size: 2rem; margin: 0 0 20px 0; text-transform: uppercase; letter-spacing: 2px; }
+        .popup-content p { color: white; font-size: 1.3rem; line-height: 1.6; margin: 0; }
+        .popup-content .close-btn { color: var(--kbc-gold); font-size: 40px; font-weight: bold; position: absolute; right: 30px; top: 20px; cursor: pointer; transition: 0.3s; }
+        .popup-content .close-btn:hover { color: white; transform: scale(1.2); }
     </style>
 </head>
 <body>
@@ -160,15 +168,23 @@
             <img src="" id="modal-image" alt="Question Media">
         </div>
     </div>
+    <!-- add pop up to display "nominate friend" if the question has isNisu: false -->
+    <div id="nominate-friend-popup" class="popup" onclick="closeNominatePopup()">
+        <div class="popup-content" onclick="event.stopPropagation()">
+            <span class="close-btn" onclick="closeNominatePopup()">&times;</span>
+            <h2>Nominate a Friend!</h2>
+            <p>This question is not about Nisu. Nominate a friend to answer it.</p>
+        </div>
+    </div>
 </div>
 
 <script>
     const GAME_CONFIG = {
         prizes: [{amount:"£100",isSafe:false},{amount:"£200",isSafe:false},{amount:"£300",isSafe:false},{amount:"£500",isSafe:false},{amount:"£1k",isSafe:true},{amount:"£2k",isSafe:false},{amount:"£4k",isSafe:false},{amount:"£8k",isSafe:false},{amount:"£16k",isSafe:false},{amount:"£32k",isSafe:true},{amount:"£64k",isSafe:false},{amount:"£125k",isSafe:false},{amount:"£250k",isSafe:false},{amount:"£500k",isSafe:false},{amount:"£1M",isSafe:true}],
         questions: [
-            { q: "What is the groom's 'drunkest' food order?", a: ["Vegan Salad", "20 McNuggets", "A single grape", "Artisanal Sourdough"], correct: 1 },
-            { q: "Which university did he almost go to but didn't?", a: ["Oxford", "Imperial", "Cambridge", "Nagpur Metro"], correct: 1, media: {type: "image", src: "q-3-media.jpg"} },
-            { q: "Why is the wedding cake 5 tiers?", a: ["Structural Integrity", "To hide the escape ladder", "Tax write-off", "He's overcompensating"], correct: 2 },
+            { q: "What is the groom's 'drunkest' food order?", a: ["Vegan Salad", "20 McNuggets", "A single grape", "Artisanal Sourdough"], correct: 1, isNisu: true },
+            { q: "Which university did he almost go to but didn't?", a: ["Oxford", "Imperial", "Cambridge", "Nagpur Metro"], correct: 1, media: {type: "image", src: "q-3-media.jpg"} , isNisu: false },
+            { q: "Why is the wedding cake 5 tiers?", a: ["Structural Integrity", "To hide the escape ladder", "Tax write-off", "He's overcompensating"], correct: 2, isNisu: true },
         ]
     };
 
@@ -243,6 +259,13 @@
         } else {
             questionText.style.width = '100%';
             viewPhotoBtn.style.display = 'none';
+        }
+        
+        // Show nominate friend popup if question is not about Nisu
+        if (qData.isNisu === false) {
+            showNominatePopup();
+        } else {
+            closeNominatePopup();
         }
 
         for(let i=0; i<4; i++) {
@@ -339,6 +362,16 @@
     function closePhotoModal() {
         const modal = document.getElementById('photo-modal');
         modal.style.display = 'none';
+    }
+
+    function showNominatePopup() {
+        const popup = document.getElementById('nominate-friend-popup');
+        popup.style.display = 'block';
+    }
+
+    function closeNominatePopup() {
+        const popup = document.getElementById('nominate-friend-popup');
+        popup.style.display = 'none';
     }
 
     initTranslations();
