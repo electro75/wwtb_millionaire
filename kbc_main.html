@@ -27,9 +27,15 @@
         .kbc-logo { width: 420px; height: 420px; border-radius: 50%; border: 4px solid var(--kbc-gold); box-shadow: 0 0 60px var(--kbc-glow); }
 
         #q-and-a { padding-bottom: 40px; display: flex; flex-direction: column; align-items: center; }
-        #question-box { width: 85%; height: 110px; background: linear-gradient(90deg, transparent, var(--kbc-blue), var(--kbc-blue), transparent); border-top: 2px solid var(--kbc-gold); border-bottom: 2px solid var(--kbc-gold); padding: 20px; text-align: center; font-size: 1.6rem; margin-bottom: 25px; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s; }
+        #question-box { width: 85%; height: 110px; background: linear-gradient(90deg, transparent, var(--kbc-blue), var(--kbc-blue), transparent); border-top: 2px solid var(--kbc-gold); border-bottom: 2px solid var(--kbc-gold); padding: 20px; margin-bottom: 25px; display: flex; align-items: center; gap: 20px; transition: opacity 0.5s; }
+        #question-text { width: 90%; text-align: center; font-size: 1.6rem; display: flex; align-items: center; justify-content: center; }
+        #question-media { width: 10%; display: flex; align-items: center; justify-content: center; }
+        #question-media .view-photo-btn { background: rgba(11, 19, 84, 0.8); border: 1px solid var(--kbc-gold); height: 60px; padding: 0 30px; font-size: 1.2rem; cursor: pointer; border-radius: 50px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; color: white; }
+        #question-media .view-photo-btn:hover { background: rgba(11, 19, 84, 1); transform: scale(1.05); }
+        
         #options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 40px; width: 80%; }
-        .option { background: rgba(11, 19, 84, 0.8); border: 1px solid var(--kbc-gold); height: 60px; padding: 0 30px; font-size: 1.2rem; cursor: pointer; border-radius: 50px; transition: all 0.2s; display: flex; align-items: center; overflow: scroll;}
+        .option { background: rgba(11, 19, 84, 0.8); border: 1px solid var(--kbc-gold); height: 60px; padding: 0 30px; font-size: 1.2rem; cursor: pointer; border-radius: 50px; transition: all 0.2s; display: flex; align-items: center; overflow: auto; scrollbar-width: none; -ms-overflow-style: none; }
+        .option::-webkit-scrollbar { display: none; }
         .option.hidden { visibility: hidden; }
         .option span.label { color: var(--kbc-gold); margin-right: 10px; font-weight: bold; }
         .option .text { transition: opacity 0.5s; }
@@ -80,6 +86,13 @@
         }
         #btn-ready:hover { transform: scale(1.05); background: var(--kbc-gold); }
         #loading-status { margin-bottom: 5px; font-style: italic; color: var(--text-dull); }
+        
+        /* Photo Modal Styles */
+        .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.9); }
+        .modal-content { position: relative; margin: auto; padding: 20px; width: 90%; max-width: 900px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; }
+        .modal-content img { max-width: 100%; max-height: 80vh; border: 3px solid var(--kbc-gold); border-radius: 10px; box-shadow: 0 0 30px var(--kbc-glow); }
+        .close-btn { color: var(--kbc-gold); font-size: 40px; font-weight: bold; position: absolute; right: 30px; top: 20px; cursor: pointer; transition: 0.3s; }
+        .close-btn:hover { color: white; transform: scale(1.2); }
     </style>
 </head>
 <body>
@@ -128,12 +141,23 @@
     </div>
     <div id="logo-container"><img src="https://i.imgur.com/8Y0pY3N.png" class="kbc-logo"></div>
     <div id="q-and-a">
-        <div id="question-box"></div>
+        <div id="question-box">
+            <div id="question-text"></div>
+            <div id="question-media">
+                <button class="view-photo-btn" onclick="showPhotoModal()">View</button>
+            </div>
+        </div>
         <div id="options-grid">
             <div class="option" id="opt-0" onclick="selectOption(0)"><span class="label">A:</span><span class="text"></span></div>
             <div class="option" id="opt-1" onclick="selectOption(1)"><span class="label">B:</span><span class="text"></span></div>
             <div class="option" id="opt-2" onclick="selectOption(2)"><span class="label">C:</span><span class="text"></span></div>
             <div class="option" id="opt-3" onclick="selectOption(3)"><span class="label">D:</span><span class="text"></span></div>
+        </div>
+    </div>
+    <div id="photo-modal" class="modal" onclick="closePhotoModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close-btn" onclick="closePhotoModal()">&times;</span>
+            <img src="" id="modal-image" alt="Question Media">
         </div>
     </div>
 </div>
@@ -143,7 +167,7 @@
         prizes: [{amount:"£100",isSafe:false},{amount:"£200",isSafe:false},{amount:"£300",isSafe:false},{amount:"£500",isSafe:false},{amount:"£1k",isSafe:true},{amount:"£2k",isSafe:false},{amount:"£4k",isSafe:false},{amount:"£8k",isSafe:false},{amount:"£16k",isSafe:false},{amount:"£32k",isSafe:true},{amount:"£64k",isSafe:false},{amount:"£125k",isSafe:false},{amount:"£250k",isSafe:false},{amount:"£500k",isSafe:false},{amount:"£1M",isSafe:true}],
         questions: [
             { q: "What is the groom's 'drunkest' food order?", a: ["Vegan Salad", "20 McNuggets", "A single grape", "Artisanal Sourdough"], correct: 1 },
-            { q: "Which university did he almost go to but didn't?", a: ["Oxford", "Imperial", "Cambridge", "Nagpur Metro"], correct: 1 },
+            { q: "Which university did he almost go to but didn't?", a: ["Oxford", "Imperial", "Cambridge", "Nagpur Metro"], correct: 1, media: {type: "image", src: "q-3-media.jpg"} },
             { q: "Why is the wedding cake 5 tiers?", a: ["Structural Integrity", "To hide the escape ladder", "Tax write-off", "He's overcompensating"], correct: 2 },
         ]
     };
@@ -206,9 +230,20 @@
     function loadQuestion() {
         updateBilingualText();
         const state = gameState[currentLevel];
+        const qData = GAME_CONFIG.questions[currentLevel];
         document.getElementById('btn-prev').disabled = (currentLevel === 0);
         document.getElementById('btn-next').disabled = (currentLevel === GAME_CONFIG.questions.length - 1) || !state.isLocked;
         document.getElementById('btn-lock').disabled = state.isLocked;
+        
+        // Show/hide view photo button based on media availability
+        const viewPhotoBtn = document.querySelector('#question-media .view-photo-btn');
+        const questionText = document.getElementById('question-text');
+        if (qData.media) {
+            viewPhotoBtn.style.display = 'flex';
+        } else {
+            questionText.style.width = '100%';
+            viewPhotoBtn.style.display = 'none';
+        }
 
         for(let i=0; i<4; i++) {
             const opt = document.getElementById(`opt-${i}`);
@@ -231,11 +266,12 @@
     function updateBilingualText() {
         const qData = GAME_CONFIG.questions[currentLevel];
         const qBox = document.getElementById('question-box');
+        const qText = document.getElementById('question-text');
         qBox.style.opacity = 0;
         document.querySelectorAll('.option .text').forEach(t => t.style.opacity = 0);
         setTimeout(() => {
             const isHi = (currentLanguage === 'hi' && qData.hi_q);
-            qBox.innerText = isHi ? qData.hi_q : qData.q;
+            qText.innerText = isHi ? qData.hi_q : qData.q;
             for(let i=0; i<4; i++) document.getElementById(`opt-${i}`).querySelector('.text').innerText = isHi ? qData.hi_a[i] : qData.a[i];
             qBox.style.opacity = 1;
             document.querySelectorAll('.option .text').forEach(t => t.style.opacity = 1);
@@ -289,6 +325,21 @@
 
     function nextQuestion() { if(gameState[currentLevel].isLocked && currentLevel < GAME_CONFIG.questions.length - 1) { currentLevel++; loadQuestion(); } }
     function prevQuestion() { if(currentLevel > 0) { currentLevel--; loadQuestion(); } }
+
+    function showPhotoModal() {
+        const qData = GAME_CONFIG.questions[currentLevel];
+        if (qData.media && qData.media.src) {
+            const modal = document.getElementById('photo-modal');
+            const modalImage = document.getElementById('modal-image');
+            modalImage.src = qData.media.src;
+            modal.style.display = 'block';
+        }
+    }
+
+    function closePhotoModal() {
+        const modal = document.getElementById('photo-modal');
+        modal.style.display = 'none';
+    }
 
     initTranslations();
 </script>
