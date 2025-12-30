@@ -234,7 +234,7 @@
             div.innerHTML = `<span>${i + 1}</span> <span>${p.amount}</span>`;
             levelsList.appendChild(div);
         });
-        loadQuestion();
+        loadQuestion(true);
         document.getElementById('snd-start').play().catch(()=>{});
         setInterval(() => {
             if (!gameState[currentLevel].isLocked) {
@@ -245,7 +245,7 @@
     }
 
     // ... (rest of the game logic functions: loadQuestion, selectOption, lockAnswer, lifelines, etc. remain the same as previous)
-    function loadQuestion() {
+    function loadQuestion(isNewQuestion) {
         updateBilingualText();
         const state = gameState[currentLevel];
         const qData = GAME_CONFIG.questions[currentLevel];
@@ -264,10 +264,10 @@
         }
         
         // Show nominate friend popup if question is not about Nisu
-        if (qData.isNisu === false) {
+        if (qData.isNisu === false && isNewQuestion) {
             showNominatePopup();
         } else {
-            closeNominatePopup();
+            closeNominatePopup(isNewQuestion);
         }
 
         for(let i=0; i<4; i++) {
@@ -352,19 +352,17 @@
         if(gameState[currentLevel].isLocked && currentLevel < GAME_CONFIG.questions.length - 1) { 
             currentLevel++; 
             
+            let isNewQuestion = false;
             // Check if this is a brand new, unseen question
             if (currentLevel > maxReachedLevel) {
                 maxReachedLevel = currentLevel;
-                document.getElementById('snd-next-level').play().catch(()=>{});
-            } else {
-                // Optional: Play a standard click sound if just revisiting a question
-                document.getElementById('snd-click').play().catch(()=>{});
+                isNewQuestion = true;
             }
 
-            loadQuestion(); 
+            loadQuestion(isNewQuestion); 
         } 
     }
-    function prevQuestion() { if(currentLevel > 0) { currentLevel--; loadQuestion(); } }
+    function prevQuestion() { if(currentLevel > 0) { currentLevel--; loadQuestion(false); } }
 
     function showPhotoModal() {
         const qData = GAME_CONFIG.questions[currentLevel];
@@ -386,9 +384,10 @@
         popup.style.display = 'block';
     }
 
-    function closeNominatePopup() {
+    function closeNominatePopup(playSound = true) {
         const popup = document.getElementById('nominate-friend-popup');
         popup.style.display = 'none';
+        if (playSound) {document.getElementById('snd-next-level').play().catch(()=>{});}
     }
 
     initTranslations();
