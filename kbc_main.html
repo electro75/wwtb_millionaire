@@ -126,11 +126,12 @@
 </div>
 
 <audio id="snd-start" src="https://cdn.pixabay.com/audio/2022/03/10/audio_c976f1f31d.mp3"></audio>
-<audio id="snd-click" src="https://cdn.pixabay.com/audio/2022/03/15/audio_7314777d4c.mp3"></audio>
-<audio id="snd-lock" src="https://cdn.pixabay.com/audio/2024/02/07/audio_8b21c97a89.mp3"></audio>
-<audio id="snd-correct" src="https://cdn.pixabay.com/audio/2021/08/04/audio_06259466aa.mp3"></audio>
-<audio id="snd-wrong" src="https://cdn.pixabay.com/audio/2021/08/04/audio_bb6640848d.mp3"></audio>
-<audio id="snd-lifeline" src="https://cdn.pixabay.com/audio/2022/03/10/audio_511c973a21.mp3"></audio>
+<audio id="snd-lock" src="option_lock.mp3"></audio>
+<audio id="snd-correct" src="right_answer.mp3"></audio>
+<audio id="snd-wrong" src="wrong_answer.mp3"></audio>
+<audio id="snd-lifeline" src="TODO"></audio>
+<audio id="snd-next-level" src="next_q.mp3"></audio>
+<audio id="snd-click" src="https://cdn.pixabay.com/audio/2022/03/24/audio_7322904975.mp3"></audio>
 
 <div id="sidebar">
     <div id="lifelines-container">
@@ -147,7 +148,7 @@
         <button id="btn-lock" onclick="lockAnswer()">Lock Final Answer</button>
         <button id="btn-next" onclick="nextQuestion()">Next ➡</button>
     </div>
-    <div id="logo-container"><img src="https://i.imgur.com/8Y0pY3N.png" class="kbc-logo"></div>
+    <div id="logo-container"><img src="nisupati_logo_nobg.jpeg" class="kbc-logo"></div>
     <div id="q-and-a">
         <div id="question-box">
             <div id="question-text"></div>
@@ -190,12 +191,13 @@
 
     let currentLevel = 0;
     let currentLanguage = 'en';
+    let maxReachedLevel = 0; // Tracks the furthest question reached
     let gameState = GAME_CONFIG.questions.map(() => ({ selectedIdx: null, isLocked: false, hiddenIndices: [] }));
     let globalLifelines = { 'life-5050': false, 'life-phone': false, 'life-audience': false };
 
     async function translateText(text) {
         try {
-            const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|hi`);
+            const res = await fetch(`https://cors-anywhere.herokuapp.com/https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|hi`);
             const data = await res.json();
             return data.responseData.translatedText;
         } catch (e) { return text; }
@@ -326,7 +328,7 @@
                 el.classList.add('wrong'); document.getElementById(`opt-${correctIdx}`).classList.add('correct'); document.getElementById('snd-wrong').play();
             }
             if (currentLevel < GAME_CONFIG.questions.length - 1) document.getElementById('btn-next').disabled = false;
-        }, 1200);
+        }, 2000);
     }
 
     function use5050() {
@@ -346,7 +348,22 @@
         globalLifelines[id] = true; document.getElementById(id).classList.add('used');
     }
 
-    function nextQuestion() { if(gameState[currentLevel].isLocked && currentLevel < GAME_CONFIG.questions.length - 1) { currentLevel++; loadQuestion(); } }
+    function nextQuestion() { 
+        if(gameState[currentLevel].isLocked && currentLevel < GAME_CONFIG.questions.length - 1) { 
+            currentLevel++; 
+            
+            // Check if this is a brand new, unseen question
+            if (currentLevel > maxReachedLevel) {
+                maxReachedLevel = currentLevel;
+                document.getElementById('snd-next-level').play().catch(()=>{});
+            } else {
+                // Optional: Play a standard click sound if just revisiting a question
+                document.getElementById('snd-click').play().catch(()=>{});
+            }
+
+            loadQuestion(); 
+        } 
+    }
     function prevQuestion() { if(currentLevel > 0) { currentLevel--; loadQuestion(); } }
 
     function showPhotoModal() {
