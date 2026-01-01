@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>KBN: The Final Verdict</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --kbc-blue: #0b1354; --kbc-gold: #d4af37; --kbc-glow: #2b58cc;
+        }
+        body { 
+            background-color: #000; color: white; font-family: 'Arial', sans-serif; 
+            margin: 0; height: 100vh; overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+            background: radial-gradient(circle at center, #1a2a6c 0%, #000 80%);
+        }
+
+        .screen {
+            text-align: center;
+            width: 80%;
+            max-width: 900px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn 1.5s ease-in-out;
+        }
+
+        .active { display: flex; }
+
+        h1 { color: var(--kbc-gold); font-size: 3rem; text-transform: uppercase; letter-spacing: 5px; margin-bottom: 40px; text-shadow: 0 0 20px var(--kbc-glow); }
+
+        /* Screen 1 Question Box */
+        #question-display {
+            font-size: 2.5rem;
+            line-height: 1.4;
+            padding: 40px;
+            border-top: 3px solid var(--kbc-gold);
+            border-bottom: 3px solid var(--kbc-gold);
+            background: rgba(11, 19, 84, 0.6);
+            margin-bottom: 50px;
+            box-shadow: 0 0 30px var(--kbc-glow);
+            border-radius: 10px;
+            /* Hidden State */
+            filter: blur(25px);
+            opacity: 0;
+            transition: filter 2s ease, opacity 2s ease;
+        }
+
+        #question-display.revealed {
+            filter: blur(0px);
+            opacity: 1;
+        }
+
+        .action-btn {
+            background: linear-gradient(to bottom, var(--kbc-gold), #8a6d3b);
+            color: #000;
+            padding: 20px 60px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border: 2px solid #fff;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 20px var(--kbc-glow);
+            transition: 0.3s;
+        }
+        .action-btn:hover { transform: scale(1.05); box-shadow: 0 0 50px var(--kbc-gold); }
+
+        /* Screen 2 Styles */
+        #final-image {
+            max-width: 100%;
+            max-height: 55vh;
+            border: 5px solid var(--kbc-gold);
+            border-radius: 15px;
+            box-shadow: 0 0 60px var(--kbc-gold);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        #congrats-text {
+            font-size: 5rem;
+            font-weight: 900;
+            background: linear-gradient(to right, #fff, var(--kbc-gold), #fff, var(--kbc-gold));
+            background-size: 300% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shine 3s linear infinite, pulse 2s infinite;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-20px); } }
+        @keyframes shine { to { background-position: 300% center; } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+    </style>
+</head>
+<body>
+
+    <audio id="snd-suspense" src="final_question_suspense.mp3" loop></audio>
+    <audio id="snd-victory" src="first_intro.mp3"></audio>
+
+    <div id="screen-1" class="screen active">
+        <h1 id="header-text">The hot seat is heating up...</h1>
+        <div id="question-display">
+            When and how did you realize Karishma was <br><br>The One?
+        </div>
+        <button id="main-btn" class="action-btn" onclick="handleGameFlow()">Reveal Question</button>
+    </div>
+
+    <div id="screen-2" class="screen">
+        <h1 id="congrats-text">YOU ARE NOW THE NISUPATI!</h1>
+        <div style="margin-bottom: 30px;">
+            <img id="final-image" src="nisu_groom.jpeg" alt="Victory Image">
+        </div>
+        <div style="font-size: 2rem; color: var(--kbc-gold);"> 💖 Congratulations Nishit and Karishma! 💖 </div>
+    </div>
+
+<script>
+    let gameState = "START"; // START -> QUESTION_REVEALED -> VERDICT_REVEALED
+
+    function handleGameFlow() {
+        const btn = document.getElementById('main-btn');
+        const qBox = document.getElementById('question-display');
+        const suspense = document.getElementById('snd-suspense');
+
+        if (gameState === "START") {
+            // 1. Reveal the Question
+            qBox.classList.add('revealed');
+            
+            // 2. Play Suspense Music
+            suspense.play().catch(e => console.log("Music blocked by browser."));
+            
+            // 3. Update Button for next phase
+            btn.innerText = "Reveal Verdict";
+            document.getElementById('header-text').innerText = "The Jackpot Question";
+            
+            gameState = "QUESTION_REVEALED";
+
+        } else if (gameState === "QUESTION_REVEALED") {
+            // 1. Stop Suspense
+            suspense.pause();
+            suspense.currentTime = 0;
+
+            // 2. Switch Screens
+            document.getElementById('screen-1').classList.remove('active');
+            document.getElementById('screen-2').classList.add('active');
+
+            // 3. Play Victory Theme
+            document.getElementById('snd-victory').play();
+
+            // 4. Launch Confetti
+            launchCelebration();
+            
+            gameState = "VERDICT_REVEALED";
+        }
+    }
+
+    function launchCelebration() {
+        const kbcColors = ['#d4af37', '#ffd700', '#c0c0c0', '#ffffff'];
+
+        // Initial big burst
+        confetti({
+            particleCount: 200,
+            spread: 90,
+            origin: { y: 0.7 },
+            colors: kbcColors,
+            startVelocity: 60
+        });
+
+        // Continuous rain for 15 seconds
+        const duration = 15 * 1000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 30, spread: 360, ticks: 100, zIndex: 0, colors: kbcColors };
+
+        const interval = setInterval(function() {
+            const timeLeft = animationEnd - Date.now();
+            if (timeLeft <= 0) return clearInterval(interval);
+
+            const particleCount = 40 * (timeLeft / duration);
+            confetti(Object.assign({}, defaults, { particleCount, origin: { x: Math.random() * 0.3 + 0.1, y: Math.random() - 0.2 } }));
+            confetti(Object.assign({}, defaults, { particleCount, origin: { x: Math.random() * 0.3 + 0.6, y: Math.random() - 0.2 } }));
+        }, 250);
+    }
+</script>
+</body>
+</html>
